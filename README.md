@@ -6,3 +6,4 @@ O atendimento continua no WhatsApp. O Caderninho guarda quem é cliente, o que c
 
 - **Protótipo:** [`app/index.html`](app/index.html). Abra no navegador do celular ou do computador; não precisa instalar nada. Vem com dados de exemplo.
 - **Ideia, funcionamento do fiado e próximos passos:** [`docs/PRODUTO.md`](docs/PRODUTO.md)
+- **Plano e system design do robô no WhatsApp (próximo passo):** [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md)
