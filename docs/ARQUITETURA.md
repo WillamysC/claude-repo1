@@ -441,7 +441,7 @@ Faltam R$ 160,41 pra empatar (≈ 38 dudus em 9 dias, uns 5 por dia).
 
 | Fase | Duração | Entregas | Pronto quando |
 |---|---|---|---|
-| **0. Fundação** | 3 a 4 dias | App na Meta com número de teste; webhook com validação de assinatura que responde "eco"; Postgres com o esquema; deploy | Ela manda "oi" e recebe resposta |
+| **0. Fundação** ✅ feita (`server/`) | 3 a 4 dias | App na Meta com número de teste; webhook com validação de assinatura que responde "eco"; Postgres com o esquema; deploy | Ela manda "oi" e recebe resposta |
 | **1. Registrar e consultar (texto)** | 1,5 semana | Interpretador com saída estruturada; busca aproximada; compra, pagamento, saldo, devedores e desfaz; perguntas de desambiguação; confirmações; conjunto de testes com ≥ 100 frases | ≥ 95% de acerto no conjunto de testes e nenhum registro sem confirmação |
 | **2. Áudio, cobrança e painel** | 1 semana | Transcrição; "cobra a X" com Pix copia-e-cola; link mágico; painel somente leitura | Pix gerado é lido pelo app do banco com o valor certo |
 | **2b. Lucro** | 3 a 4 dias | Custo por produto e contas fixas por mensagem; "como tá o mês?"; simulação de preço; tela Lucro no painel | O exemplo da seção 10 bate centavo por centavo nos testes |
