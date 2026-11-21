@@ -45,6 +45,7 @@ Um único arquivo HTML, sem servidor, que funciona no navegador do celular:
 - Fiado com todos os devedores ordenados por atraso
 - Agenda (para quem presta serviço); concluir um serviço já abre a venda
 - Catálogo com "retorno em N dias"
+- **Lucro**: custo de cada produto, contas fixas do mês, margem de contribuição, ponto de equilíbrio (quanto vender para empatar, em R$ e em unidades), resultado do mês, quanto do faturamento está no fiado e simulador de preço
 - Mensagens editáveis, backup (copiar/baixar/restaurar) e dois exemplos prontos (dudus e refrigeração)
 
 Os dados ficam **só no aparelho** (localStorage). Por isso existe o backup.
@@ -57,6 +58,16 @@ Os dados ficam **só no aparelho** (localStorage). Por isso existe o backup.
 4. **Ler pedidos que chegam.** Com a API oficial, dá pra transformar "me vê 10 dudus de ninho" numa venda pré-preenchida para o vendedor só confirmar. É o passo mais caro; só vale com o resto validado.
 
 Ferramentas não oficiais que "espelham" o WhatsApp Web (automação pelo QR code) não são recomendadas: violam os termos do WhatsApp e o número pode ser banido, o que para esse público é perder o negócio.
+
+## Lucro: quanto precisa vender pra empatar
+
+Saber quem deve é metade da história. A outra metade é saber se o negócio dá lucro. A tela **Lucro** faz a conta clássica do ponto de equilíbrio com os dados que o Caderninho já tem:
+
+- **Margem de contribuição** = (preço − custo) ÷ preço. Ex.: comprar a R$ 2,99 e vender a R$ 8 dá 62,6%.
+- **Ponto de equilíbrio** = custos fixos ÷ margem. Com R$ 1.000 de fixos: R$ 1.596,81 de vendas no mês.
+- **Unidades para empatar** = ponto de equilíbrio ÷ preço. No exemplo, 200 unidades. Vendeu mais, é lucro; vendeu menos, é prejuízo.
+
+Diferenças em relação a fazer na planilha: usa as vendas reais do mês (com a margem média ponderada dos produtos vendidos), atualiza a cada venda anotada, mostra quanto do faturamento ainda está no fiado (lucro que ainda não virou dinheiro) e guarda o custo do dia da venda. O detalhe de como isso entra no robô do WhatsApp está em `docs/ARQUITETURA.md`, seção 10.
 
 ## Próximos passos sugeridos
 

@@ -96,7 +96,7 @@ p { margin: 0; }
 .lista { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); min-width: 0; }
 .item:first-child { border-top: 0; }
-.item.clicavel { cursor: pointer; }
+.item.clicavel, tr.clicavel { cursor: pointer; }
 .item.clicavel:hover { background: color-mix(in srgb, var(--accent) 5%, var(--surface)); }
 .item .grow p:first-child { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .avatar { width: 38px; height: 38px; border-radius: 50%; flex: none; display: grid; place-items: center; font-weight: 700; font-size: 0.9rem; background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
@@ -124,7 +124,8 @@ button:focus-visible, .btn:focus-visible, input:focus-visible, select:focus-visi
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .btn.wa { color: #06200F; } }
 .btn.mini, button.mini { padding: 6px 10px; font-size: 0.8rem; border-radius: 8px; }
 button.perigo { color: var(--perigo); }
-button.link { border: 0; background: none; color: var(--accent); padding: 4px 0; }
+button.link { border: 0; background: none; color: var(--accent); padding: 4px 0; white-space: normal; text-align: left; justify-content: flex-start; }
+.secao, .card, .wrap > * { min-width: 0; }
 .wa-ico { width: 15px; height: 15px; flex: none; }
 
 /* Abas */
@@ -205,6 +206,30 @@ dialog#sheet::backdrop { background: rgb(8 14 20 / 0.5); }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 600; font-size: 0.88rem; z-index: 20; max-width: calc(100% - 32px); }
 @media (prefers-reduced-motion: no-preference) { .toast { animation: sobe .2s ease-out; } @keyframes sobe { from { transform: translate(-50%, 8px); opacity: 0; } } }
+.barra { height: 12px; border-radius: 999px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.barra i { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+.barra.ok i { background: var(--ok); }
+.meta-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; text-align: left; font: inherit; color: inherit; width: 100%; }
+button.meta-card { display: flex; white-space: normal; align-items: stretch; justify-content: flex-start; font-weight: 400; font-size: 15px; padding: 14px; border-radius: var(--r); }
+.meta-card b { font-size: 1rem; }
+.meta-card:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); }
+.resultado { font-family: var(--font-display); font-size: 1.45rem; font-weight: 800; line-height: 1.2; text-wrap: balance; }
+.resultado.lucro { color: var(--ok); }
+.resultado.falta { color: var(--ink); }
+.conta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-variant-numeric: tabular-nums; }
+.conta .total { font-weight: 700; border-top: 1px solid var(--line); padding-top: 6px; }
+.conta span:nth-child(even) { text-align: right; white-space: nowrap; }
+.formula { font-size: 0.8rem; color: var(--muted); background: var(--bg); border: 1px dashed var(--line); border-radius: 10px; padding: 8px 10px; }
+.tabela { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); }
+.tabela table { width: 100%; border-collapse: collapse; font-size: 0.88rem; font-variant-numeric: tabular-nums; }
+.tabela th, .tabela td { padding: 9px 10px; text-align: right; border-top: 1px solid var(--line); white-space: nowrap; }
+.tabela th { border-top: 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+.tabela th:first-child, .tabela td:first-child { text-align: left; white-space: normal; min-width: 120px; }
+.fixo-linha { display: grid; grid-template-columns: minmax(0, 1fr) 110px auto; gap: 8px; align-items: center; }
+.sim-saida { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sim-saida div { background: var(--bg); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sim-saida b { font-family: var(--font-display); font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+@media (max-width: 400px) { .sim-saida { grid-template-columns: 1fr 1fr; } }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 code { font-size: 0.85em; background: var(--bg); padding: 1px 5px; border-radius: 5px; border: 1px solid var(--line); }
 </style>
@@ -264,7 +289,7 @@ const MODELOS_PADRAO = {
 function vazio() {
   return {
     versao: 1, exemplo: false,
-    perfil: { negocio: "Meu negócio", ramo: "produtos", pix: "", diasCobrar: 7, diasSumido: 30 },
+    perfil: { negocio: "Meu negócio", ramo: "produtos", pix: "", diasCobrar: 7, diasSumido: 30, fixos: [], metaLucro: 0 },
     clientes: [], catalogo: [], vendas: [], pagamentos: [], agenda: [],
     modelos: { ...MODELOS_PADRAO },
   };
@@ -273,13 +298,14 @@ function vazio() {
 function exemploDudu() {
   const b = vazio(); const h = hoje();
   b.exemplo = true;
-  b.perfil = { negocio: "Dudus da Vila", ramo: "produtos", pix: "(81) 98888-0000", diasCobrar: 7, diasSumido: 21 };
+  b.perfil = { negocio: "Dudus da Vila", ramo: "produtos", pix: "(81) 98888-0000", diasCobrar: 7, diasSumido: 21, metaLucro: 300,
+    fixos: [{ nome: "Luz do freezer", valor: 90 }, { nome: "Celular e internet", valor: 50 }, { nome: "Transporte", valor: 60 }] };
   b.catalogo = [
-    { id: "p1", nome: "Dudu de leite ninho", preco: 3, retornoDias: 0 },
-    { id: "p2", nome: "Dudu de maracujá", preco: 2.5, retornoDias: 0 },
-    { id: "p3", nome: "Dudu de morango", preco: 2.5, retornoDias: 0 },
-    { id: "p4", nome: "Dudu de coco", preco: 2.5, retornoDias: 0 },
-    { id: "p5", nome: "Pacote 10 dudus", preco: 22, retornoDias: 0 },
+    { id: "p1", nome: "Dudu de leite ninho", preco: 3, custo: 1.1, retornoDias: 0 },
+    { id: "p2", nome: "Dudu de maracujá", preco: 2.5, custo: 0.8, retornoDias: 0 },
+    { id: "p3", nome: "Dudu de morango", preco: 2.5, custo: 0.85, retornoDias: 0 },
+    { id: "p4", nome: "Dudu de coco", preco: 2.5, custo: 0.8, retornoDias: 0 },
+    { id: "p5", nome: "Pacote 10 dudus", preco: 22, custo: 9, retornoDias: 0 },
   ];
   const c = (id, nome, fone, bairro, notas, limite) => ({ id, nome, fone: normFone(fone), bairro, notas, limite, criado: somaDias(h, -60) });
   b.clientes = [
@@ -293,7 +319,7 @@ function exemploDudu() {
     const total = r2(itens.reduce((s, i) => s + i.qtd * i.preco, 0));
     return { id: uid(), clienteId: cli, data: somaDias(h, -dias), itens, total, pago: pago === "tudo" ? total : pago, forma };
   };
-  const it = (pid, qtd) => { const p = b.catalogo.find((x) => x.id === pid); return { nome: p.nome, qtd, preco: p.preco }; };
+  const it = (pid, qtd) => { const p = b.catalogo.find((x) => x.id === pid); return { nome: p.nome, qtd, preco: p.preco, custo: p.custo }; };
   b.vendas = [
     v("c1", 16, [it("p1", 6), it("p3", 4)], 0),
     v("c1", 9, [it("p5", 1)], 0),
@@ -312,13 +338,14 @@ function exemploDudu() {
 function exemploRefrig() {
   const b = vazio(); const h = hoje();
   b.exemplo = true;
-  b.perfil = { negocio: "Frio Certo Refrigeração", ramo: "servicos", pix: "frio.certo@email.com", diasCobrar: 10, diasSumido: 120 };
+  b.perfil = { negocio: "Frio Certo Refrigeração", ramo: "servicos", pix: "frio.certo@email.com", diasCobrar: 10, diasSumido: 120, metaLucro: 3000,
+    fixos: [{ nome: "Carro e combustível", valor: 600 }, { nome: "MEI (DAS)", valor: 76 }, { nome: "Celular", valor: 70 }, { nome: "Ferramentas (parcela)", valor: 150 }] };
   b.catalogo = [
-    { id: "s1", nome: "Limpeza de split até 12.000 BTUs", preco: 180, retornoDias: 180 },
-    { id: "s2", nome: "Instalação de split", preco: 450, retornoDias: 180 },
-    { id: "s3", nome: "Recarga de gás", preco: 280, retornoDias: 0 },
-    { id: "s4", nome: "Visita técnica", preco: 80, retornoDias: 0 },
-    { id: "s5", nome: "Conserto de geladeira", preco: 250, retornoDias: 0 },
+    { id: "s1", nome: "Limpeza de split até 12.000 BTUs", preco: 180, custo: 25, retornoDias: 180 },
+    { id: "s2", nome: "Instalação de split", preco: 450, custo: 120, retornoDias: 180 },
+    { id: "s3", nome: "Recarga de gás", preco: 280, custo: 110, retornoDias: 0 },
+    { id: "s4", nome: "Visita técnica", preco: 80, custo: 15, retornoDias: 0 },
+    { id: "s5", nome: "Conserto de geladeira", preco: 250, custo: 80, retornoDias: 0 },
   ];
   const c = (id, nome, fone, bairro, notas, limite) => ({ id, nome, fone: normFone(fone), bairro, notas, limite, criado: somaDias(h, -200) });
   b.clientes = [
@@ -327,7 +354,7 @@ function exemploRefrig() {
     c("c3", "Juliana Rocha", "81 98444-5566", "Casa Forte, apto 302", "Interfone 302", 0),
     c("c4", "Clínica Sorriso", "81 99222-8899", "Graças", "Falar com a recepção (Bia)", 500),
   ];
-  const it = (pid, qtd) => { const p = b.catalogo.find((x) => x.id === pid); return { nome: p.nome, qtd, preco: p.preco, retornoDias: p.retornoDias }; };
+  const it = (pid, qtd) => { const p = b.catalogo.find((x) => x.id === pid); return { nome: p.nome, qtd, preco: p.preco, custo: p.custo, retornoDias: p.retornoDias }; };
   const v = (cli, dias, itens, pago, forma = "pix") => {
     const total = r2(itens.reduce((s, i) => s + i.qtd * i.preco, 0));
     return { id: uid(), clienteId: cli, data: somaDias(h, -dias), itens, total, pago: pago === "tudo" ? total : pago, forma };
@@ -338,6 +365,8 @@ function exemploRefrig() {
     v("c2", 14, [it("s1", 3)], 200),
     v("c3", 40, [it("s2", 1)], "tudo", "cartao"),
     v("c4", 185, [it("s1", 4)], "tudo"),
+    v("c3", 6, [it("s5", 1)], "tudo"),
+    v("c1", 4, [it("s4", 1)], "tudo", "dinheiro"),
   ];
   b.agenda = [
     { id: uid(), clienteId: "c3", data: somaDias(h, 1), hora: "09:00", servico: "Conserto de geladeira", endereco: "Casa Forte, apto 302", status: "agendado" },
@@ -348,7 +377,7 @@ function exemploRefrig() {
 
 let db = carregar();
 function carregar() {
-  try { const s = localStorage.getItem(CHAVE); if (s) { const d = JSON.parse(s); d.modelos = { ...MODELOS_PADRAO, ...(d.modelos || {}) }; return d; } } catch (e) {}
+  try { const s = localStorage.getItem(CHAVE); if (s) { const d = JSON.parse(s); d.modelos = { ...MODELOS_PADRAO, ...(d.modelos || {}) }; d.perfil.fixos ||= []; d.perfil.metaLucro ||= 0; return d; } } catch (e) {}
   return exemploDudu();
 }
 function salvar() { try { localStorage.setItem(CHAVE, JSON.stringify(db)); } catch (e) {} }
@@ -385,6 +414,61 @@ function devedores() {
 const ultimaCompra = (id) => { const v = vendasDe(id); return v.length ? v[v.length - 1].data : null; };
 const descItens = (itens) => itens.map((i) => `${i.qtd > 1 || !Number.isInteger(i.qtd) ? i.qtd + "× " : ""}${i.nome}`).join(", ");
 function noMes(iso) { return iso.slice(0, 7) === hoje().slice(0, 7); }
+
+/* Lucro: a conta do ponto de equilíbrio.
+ *   Margem de contribuição (%) = (preço de venda − custo) ÷ preço de venda
+ *   Ponto de equilíbrio (R$)   = custos fixos ÷ margem de contribuição
+ *   Unidades para empatar      = ponto de equilíbrio ÷ preço de venda (no mix: preço médio por unidade)
+ * Com vários produtos, a margem usada é a média ponderada do que foi vendido no mês. */
+const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+const temCusto = (x) => typeof x === "number" && !Number.isNaN(x);
+function custoDoItem(i) {
+  if (temCusto(i.custo)) return i.custo;
+  const c = db.catalogo.find((x) => x.nome === i.nome);
+  return c && temCusto(c.custo) ? c.custo : null;
+}
+const totalFixos = () => r2((db.perfil.fixos || []).reduce((s, f) => s + (Number(f.valor) || 0), 0));
+function margemCatalogo() {
+  const l = db.catalogo.filter((i) => temCusto(i.custo) && i.preco > 0);
+  return l.length ? l.reduce((s, i) => s + (i.preco - i.custo) / i.preco, 0) / l.length : null;
+}
+function contaPE(preco, custo, fixos) {
+  const margem = preco > 0 ? (preco - custo) / preco : 0;
+  const pe = margem > 0 ? fixos / margem : Infinity;
+  return { margem, pe, unidades: margem > 0 ? Math.ceil(r2(pe / preco)) : Infinity };
+}
+function resultadoMes() {
+  const vs = db.vendas.filter((v) => noMes(v.data));
+  let receita = 0, custoVar = 0, receitaComCusto = 0, unidades = 0, semCusto = 0, noFiado = 0;
+  for (const v of vs) {
+    noFiado += Math.max(0, v.total - v.pago);
+    for (const i of v.itens) {
+      const val = i.qtd * i.preco; receita += val; unidades += i.qtd;
+      const c = custoDoItem(i);
+      if (c === null) semCusto += val; else { custoVar += i.qtd * c; receitaComCusto += val; }
+    }
+  }
+  const margem = receitaComCusto > 0 ? (receitaComCusto - custoVar) / receitaComCusto : margemCatalogo();
+  const fixos = totalFixos();
+  const precoMedio = unidades > 0 ? receita / unidades : (db.catalogo.length ? db.catalogo.reduce((s, i) => s + i.preco, 0) / db.catalogo.length : 0);
+  const pe = margem > 0 ? fixos / margem : Infinity;
+  const contrib = margem !== null ? receita * margem : null;
+  const lucro = contrib !== null ? contrib - fixos : null;
+  const faltaR = Number.isFinite(pe) ? Math.max(0, pe - receita) : Infinity;
+  const [y, m, d] = hoje().split("-").map(Number);
+  const diasMes = new Date(y, m, 0).getDate();
+  const ritmo = d > 0 ? receita / d * diasMes : 0;
+  const metaFat = margem > 0 ? (fixos + (db.perfil.metaLucro || 0)) / margem : Infinity;
+  return {
+    mes: MESES[m - 1], receita: r2(receita), custoVar: r2(custoVar + (margem !== null ? semCusto * (1 - margem) : 0)), margem, fixos, pe, precoMedio,
+    unidadesPE: precoMedio > 0 && Number.isFinite(pe) ? Math.ceil(r2(pe / precoMedio)) : null,
+    faltaR, faltaUnid: precoMedio > 0 && Number.isFinite(faltaR) ? Math.ceil(r2(faltaR / precoMedio)) : null,
+    contrib, lucro, unidades, semCusto: r2(semCusto), noFiado: r2(noFiado), ritmo: r2(ritmo), metaFat, diasRestantes: diasMes - d,
+    configurado: fixos > 0 && margem !== null,
+  };
+}
+const pct = (x) => `${Math.round(x * 100)}%`;
+const nomeUnid = () => db.perfil.ramo === "servicos" ? "serviços" : "unidades";
 
 function retornosPendentes() {
   const limite = somaDias(hoje(), 15);
@@ -442,11 +526,12 @@ const ICONES = {
   fiado: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>',
   agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   ajustes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>',
+  lucro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="m4 16 5-5 4 3 7-8"/><path d="M15 6h5v5"/></svg>',
   busca: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>',
 };
 
 function renderAbas() {
-  const ab = [["inicio", "Início"], ["clientes", "Clientes"], ["vender", "Vender"], ["fiado", "Fiado"], [db.perfil.ramo === "servicos" ? "agenda" : "ajustes", db.perfil.ramo === "servicos" ? "Agenda" : "Ajustes"]];
+  const ab = [["inicio", "Início"], ["clientes", "Clientes"], ["vender", "Vender"], ["fiado", "Fiado"], db.perfil.ramo === "servicos" ? ["agenda", "Agenda"] : ["lucro", "Lucro"]];
   $("#abas").innerHTML = ab.map(([k, r]) => k === "vender"
     ? `<button class="vender" data-act="nova-venda"><span class="bola">${ICONES.vender}</span>${r}</button>`
     : `<button data-act="tela" data-tela="${k}" ${tela === k || (tela === "cliente" && k === "clientes") ? 'aria-current="page"' : ""}>${ICONES[k]}${r}</button>`).join("");
@@ -455,10 +540,15 @@ function renderAbas() {
 function render() {
   renderAbas();
   const el = $("#app");
-  const telas = { inicio: telaInicio, clientes: telaClientes, cliente: telaCliente, fiado: telaFiado, agenda: telaAgenda, ajustes: telaAjustes };
+  const telas = { lucro: telaLucro, inicio: telaInicio, clientes: telaClientes, cliente: telaCliente, fiado: telaFiado, agenda: telaAgenda, ajustes: telaAjustes };
   el.innerHTML = (db.exemplo ? faixaExemplo() : "") + (telas[tela] || telaInicio)();
   const bi = $("#busca");
   if (bi) bi.addEventListener("input", (e) => { busca = e.target.value; $("#lista-clientes").innerHTML = listaClientes(); });
+  if (tela === "lucro") {
+    ["#sm-preco", "#sm-custo", "#sm-fixos", "#sm-alvo"].forEach((s) => $(s).addEventListener("input", atualizarSimulador));
+    $("#fixos-lista").addEventListener("input", totalFixosForm);
+    atualizarSimulador();
+  }
 }
 
 function faixaExemplo() {
@@ -488,6 +578,7 @@ function telaInicio() {
     <div class="stat"><span class="eyebrow">Vendido no mês</span><b>${brl(vendidoMes)}</b><span class="small muted">${vMes.length} venda${vMes.length === 1 ? "" : "s"}</span></div>
     <div class="stat"><span class="eyebrow">Recebido no mês</span><b>${brl(recebidoMes)}</b><span class="small muted">hoje: ${hojeV.length} venda${hojeV.length === 1 ? "" : "s"}</span></div>
   </section>`;
+  h += cartaoMeta();
 
   h += secao("Pra cobrar", `fiado com ${db.perfil.diasCobrar}+ dias`, cobrar.length ? cobrar.slice(0, 6).map((d) => `
     <div class="item"><div class="avatar">${esc(iniciais(d.c.nome))}</div>
@@ -513,6 +604,90 @@ function telaInicio() {
       </div>`).join(""));
   }
   return h;
+}
+
+function cartaoMeta() {
+  const r = resultadoMes();
+  if (!r.configurado) return `<button class="meta-card" data-act="tela" data-tela="lucro"><span class="eyebrow">Lucro do mês</span><b>Quanto você precisa vender pra ter lucro?</b><span class="small muted">Informe o custo dos produtos e as contas fixas do mês, e o Caderninho faz a conta.</span></button>`;
+  const prog = Number.isFinite(r.pe) && r.pe > 0 ? Math.min(1, r.receita / r.pe) : 0;
+  const passou = r.receita >= r.pe;
+  return `<button class="meta-card" data-act="tela" data-tela="lucro"><div class="row between"><span class="eyebrow">Ponto de equilíbrio de ${r.mes}</span><span class="small muted num">${brl(r.receita)} de ${brl(r.pe)}</span></div>
+    <div class="barra ${passou ? "ok" : ""}" role="img" aria-label="${Math.round(prog * 100)}% do ponto de equilíbrio"><i style="width:${(prog * 100).toFixed(1)}%"></i></div>
+    <b>${passou ? `Passou do empate: lucro estimado de ${brl(r.lucro)}` : `Faltam ${brl(r.faltaR)}${r.faltaUnid ? ` (≈ ${r.faltaUnid} ${nomeUnid()})` : ""} pra empatar`}</b>
+    <span class="small muted">${passou ? "Cada venda a mais agora é lucro." : `Até aqui o mês está ${r.lucro < 0 ? `${brl(-r.lucro)} no vermelho` : "no zero"}. ${r.diasRestantes} dias pela frente.`}</span></button>`;
+}
+
+function telaLucro() {
+  const r = resultadoMes(); const p = db.perfil;
+  const passou = r.configurado && r.receita >= r.pe;
+  const prog = r.configurado && r.pe > 0 ? Math.min(1, r.receita / r.pe) : 0;
+  const un = nomeUnid();
+  let h = cabecalho("Lucro", `mês de ${r.mes}`, `<button class="mini" data-act="tela" data-tela="ajustes">Ajustes</button>`);
+
+  if (r.configurado) {
+    h += `<section class="card">
+      <p class="resultado ${passou ? "lucro" : "falta"}">${passou ? `Lucro estimado: ${brl(r.lucro)}` : `Faltam ${brl(r.faltaR)} pra empatar`}</p>
+      <div class="barra ${passou ? "ok" : ""}" role="img" aria-label="${Math.round(prog * 100)}% do ponto de equilíbrio"><i style="width:${(prog * 100).toFixed(1)}%"></i></div>
+      <p class="small muted">Ponto de equilíbrio: <b>${brl(r.pe)}</b>${r.unidadesPE ? ` ≈ <b>${r.unidadesPE} ${un}</b> no mês` : ""}. ${passou ? "Daqui pra frente, cada venda é lucro." : r.faltaUnid ? `Faltam ≈ ${r.faltaUnid} ${un} em ${r.diasRestantes} dias (≈ ${Math.ceil(r.faltaUnid / Math.max(1, r.diasRestantes))} por dia).` : ""}</p>
+      <div class="conta">
+        <span>Vendido no mês</span><span>${brl(r.receita)}</span>
+        <span>− Custo do que foi vendido</span><span>${brl(r.custoVar)}</span>
+        <span>= Margem de contribuição (${pct(r.margem)})</span><span>${brl(r.contrib)}</span>
+        <span>− Custos fixos</span><span>${brl(r.fixos)}</span>
+        <span class="total">= Resultado do mês</span><span class="total" style="color:${r.lucro >= 0 ? "var(--ok)" : "var(--perigo)"}">${brl(r.lucro)}</span>
+      </div>
+      ${p.metaLucro > 0 && Number.isFinite(r.metaFat) ? `<p class="small">Para lucrar <b>${brl(p.metaLucro)}</b> no mês, a meta de vendas é <b>${brl(r.metaFat)}</b>${r.precoMedio ? ` (≈ ${Math.ceil(r2(r.metaFat / r.precoMedio))} ${un})` : ""}. No ritmo atual, o mês fecha em ${brl(r.ritmo)}.</p>` : `<p class="small muted">No ritmo atual, o mês fecha em ${brl(r.ritmo)} de vendas.</p>`}
+      ${r.noFiado > 0 ? `<p class="aviso">${brl(r.noFiado)} das vendas deste mês foram no fiado. O lucro só vira dinheiro no bolso quando o fiado volta, e fiado que não volta é prejuízo.</p>` : ""}
+      ${r.semCusto > 0 ? `<p class="small muted">${brl(r.semCusto)} em vendas sem custo informado. Usei a margem média dos outros itens para elas.</p>` : ""}
+    </section>`;
+  } else {
+    h += `<section class="card"><h2>Quanto você precisa vender pra ter lucro?</h2>
+      <p class="small">São dois números: <b>quanto custa cada produto</b> (no catálogo abaixo) e <b>as contas fixas do mês</b> (luz, celular, aluguel). Com eles, o Caderninho calcula o ponto de equilíbrio: quanto vender para ficar no zero a zero. Acima dele é lucro; abaixo, prejuízo.</p></section>`;
+  }
+
+  const linhas = db.catalogo.map((i) => {
+    if (!temCusto(i.custo)) return `<tr><td>${esc(i.nome)}</td><td>${brl(i.preco)}</td><td colspan="3" style="text-align:right"><button class="mini" data-act="cat-editar" data-id="${i.id}">Informar custo</button></td></tr>`;
+    const c = contaPE(i.preco, i.custo, r.fixos);
+    const ruim = c.margem <= 0;
+    return `<tr class="clicavel" data-act="cat-editar" data-id="${i.id}"><td>${esc(i.nome)}</td><td>${brl(i.preco)}</td><td>${brl(i.custo)}</td><td>${ruim ? '<span class="chip perigo">prejuízo</span>' : `${brl(i.preco - i.custo)} · ${pct(c.margem)}`}</td><td>${ruim || !r.fixos ? "—" : c.unidades}</td></tr>`;
+  }).join("");
+  h += `<section class="secao"><div class="secao-head"><div><h2>Margem de cada ${db.perfil.ramo === "servicos" ? "serviço" : "produto"}</h2><p class="small muted">toque para mudar preço ou custo</p></div><button class="mini prim" data-act="cat-novo">+ Item</button></div>
+    ${db.catalogo.length ? `<div class="tabela"><table><thead><tr><th>Item</th><th>Preço</th><th>Custo</th><th>Margem</th><th>Pra empatar*</th></tr></thead><tbody>${linhas}</tbody></table></div>
+    <p class="small muted">* Quantos seria preciso vender no mês, só desse item, para pagar os custos fixos. No custo entra tudo que acompanha cada venda: ingredientes, saquinho, gás, peças, taxa da maquininha.</p>` : `<div class="lista"><p class="vazio">Cadastre seus produtos com preço e custo.</p></div>`}</section>`;
+
+  h += `<form class="card" id="f-fixos"><h2>Custos fixos do mês</h2><p class="small muted">O que você paga todo mês, vendendo ou não.</p>
+    <div class="stack" id="fixos-lista">${(p.fixos.length ? p.fixos : [{ nome: "", valor: "" }]).map((f, k) => linhaFixo(f, k)).join("")}</div>
+    <div class="row between wrapr"><button type="button" class="mini" data-act="fixo-mais">+ Conta fixa</button><span class="small">Total: <b class="num" id="fixos-total">${brl(r.fixos)}</b></span></div>
+    <label class="campo">Quanto quer lucrar por mês? (R$, opcional)<input id="fx-meta" inputmode="decimal" value="${p.metaLucro ? String(p.metaLucro).replace(".", ",") : ""}" placeholder="Ex.: 500"></label>
+    <div class="sheet-pe"><button class="prim" type="submit">Salvar</button></div></form>`;
+
+  const ex = db.catalogo.find((i) => temCusto(i.custo)) || { preco: 8, custo: 2.99 };
+  h += `<section class="card"><h2>E se eu mudar o preço?</h2><p class="small muted">Simule sem mexer no catálogo.</p>
+    <div class="duas"><label class="campo">Vendo por (R$)<input id="sm-preco" inputmode="decimal" value="${String(ex.preco.toFixed(2)).replace(".", ",")}"></label><label class="campo">Compro / custa (R$)<input id="sm-custo" inputmode="decimal" value="${String(ex.custo.toFixed(2)).replace(".", ",")}"></label></div>
+    <label class="campo">Custos fixos do mês (R$)<input id="sm-fixos" inputmode="decimal" value="${String((r.fixos || 1000).toFixed(2)).replace(".", ",")}"></label>
+    <div class="sim-saida" id="sm-saida"></div>
+    <div class="formula">Margem = (preço − custo) ÷ preço · Ponto de equilíbrio = fixos ÷ margem · Unidades = ponto de equilíbrio ÷ preço</div>
+    <button type="button" class="link" data-act="sim-exemplo">Ver exemplo: lata comprada a R$ 2,99 e vendida a R$ 8, com R$ 1.000 de fixos</button>
+    <div class="stack" style="gap:6px"><span class="eyebrow">Preço para uma margem desejada</span>
+      <div class="duas"><label class="campo">Margem que quero (%)<input id="sm-alvo" inputmode="decimal" value="60"></label><div class="campo" style="display:flex;flex-direction:column;gap:4px;font-size:0.82rem;font-weight:600;color:var(--muted)"><span>Preço sugerido</span><b class="num" id="sm-sugerido" style="font-size:1.2rem;color:var(--ink)"></b></div></div>
+      <p class="formula">Preço = custo ÷ (1 − margem desejada)</p></div>
+  </section>`;
+  return h;
+}
+const linhaFixo = (f, k) => `<div class="fixo-linha"><input aria-label="Conta" data-fx="nome" value="${esc(f.nome)}" placeholder="Ex.: luz do freezer"><input aria-label="Valor" data-fx="valor" inputmode="decimal" value="${f.valor !== "" && f.valor != null ? String(f.valor).replace(".", ",") : ""}" placeholder="R$"><button type="button" class="mini" data-act="fixo-tirar" aria-label="Remover">✕</button></div>`;
+function atualizarSimulador() {
+  const out = $("#sm-saida"); if (!out) return;
+  const preco = numBR($("#sm-preco").value), custo = numBR($("#sm-custo").value), fixos = numBR($("#sm-fixos").value);
+  const c = contaPE(preco, custo, fixos);
+  out.innerHTML = c.margem > 0
+    ? `<div><span class="eyebrow">Margem</span><b>${(c.margem * 100).toFixed(1).replace(".", ",")}%</b></div><div><span class="eyebrow">Empate</span><b>${brl(c.pe)}</b></div><div><span class="eyebrow">${nomeUnid()}</span><b>${c.unidades}</b></div>`
+    : `<div style="grid-column:1/-1"><b style="color:var(--perigo);font-size:1rem">Preço abaixo do custo: cada venda dá prejuízo.</b></div>`;
+  const alvo = numBR($("#sm-alvo").value) / 100;
+  $("#sm-sugerido").textContent = alvo > 0 && alvo < 1 && custo > 0 ? brl(custo / (1 - alvo)) : "—";
+}
+function totalFixosForm() {
+  let t = 0; document.querySelectorAll("#fixos-lista [data-fx=valor]").forEach((i) => { t += numBR(i.value); });
+  const el = $("#fixos-total"); if (el) el.textContent = brl(t);
 }
 
 function secao(titulo, sub, corpo, acao = "") {
@@ -624,7 +799,7 @@ function telaAjustes() {
 
   <section class="card"><div class="row between"><h2>Catálogo</h2><button class="mini prim" data-act="cat-novo">+ Item</button></div>
     <p class="small muted">Produtos e serviços que aparecem na hora de vender. “Retorno” é para serviços que pedem manutenção (ex.: limpeza de ar a cada 180 dias): o app avisa quando chamar o cliente de volta.</p>
-    <div class="lista">${db.catalogo.length ? db.catalogo.map((i) => `<div class="item clicavel" data-act="cat-editar" data-id="${i.id}"><div class="grow"><p>${esc(i.nome)}</p><p class="small muted">${i.retornoDias ? `retorno em ${i.retornoDias} dias` : "sem retorno"}</p></div><span class="valor">${brl(i.preco)}</span></div>`).join("") : `<p class="vazio">Nenhum item. Dá pra vender item avulso também.</p>`}</div></section>
+    <div class="lista">${db.catalogo.length ? db.catalogo.map((i) => `<div class="item clicavel" data-act="cat-editar" data-id="${i.id}"><div class="grow"><p>${esc(i.nome)}</p><p class="small muted">${temCusto(i.custo) ? `custo ${brl(i.custo)} · margem ${i.preco > 0 ? pct((i.preco - i.custo) / i.preco) : "—"}` : "custo não informado"}${i.retornoDias ? ` · retorno em ${i.retornoDias} dias` : ""}</p></div><span class="valor">${brl(i.preco)}</span></div>`).join("") : `<p class="vazio">Nenhum item. Dá pra vender item avulso também.</p>`}</div></section>
 
   <form class="card" id="f-modelos"><h2>Mensagens do WhatsApp</h2>
     <p class="small muted">Use os campos entre chaves: <code>{nome}</code> <code>{negocio}</code> <code>{pix}</code> <code>{valor}</code> <code>{itens}</code> <code>{total}</code> <code>{data}</code> <code>{servico}</code> <code>{hora}</code>.</p>
@@ -726,7 +901,7 @@ function salvarVenda() {
   const cid = clienteDoForm("vd"); if (!cid) { aviso("Escreva o nome do cliente."); return; }
   const total = totalCarrinho(); const modo = document.querySelector('input[name="vd-modo"]:checked').value;
   let pago = modo === "pago" ? total : modo === "fiado" ? 0 : Math.min(total, numBR($("#vd-parte").value));
-  const v = { id: uid(), clienteId: cid, data: $("#vd-data").value || hoje(), itens: carrinho.map(({ nome, qtd, preco, retornoDias }) => ({ nome: nome || "Item", qtd, preco, retornoDias: retornoDias || 0 })), total, pago: r2(pago), forma: modo === "fiado" ? "fiado" : $("#vd-forma").value };
+  const v = { id: uid(), clienteId: cid, data: $("#vd-data").value || hoje(), itens: carrinho.map(({ nome, qtd, preco, custo, retornoDias }) => ({ nome: nome || "Item", qtd, preco, ...(temCusto(custo) ? { custo } : {}), retornoDias: retornoDias || 0 })), total, pago: r2(pago), forma: modo === "fiado" ? "fiado" : $("#vd-forma").value };
   db.vendas.push(v); salvar(); render();
   const c = cliente(cid); const resta = r2(total - pago);
   abrirFolha("Venda anotada ✓", `<p>${esc(c.nome)} · <b>${brl(total)}</b> ${resta > 0 ? `<span class="chip fiado">${brl(resta)} no fiado</span>` : '<span class="chip ok">pago</span>'}</p>
@@ -797,11 +972,17 @@ function salvarAgenda(form) {
 /* Catálogo */
 function folhaCatalogo(id) {
   const i = id ? db.catalogo.find((x) => x.id === id) : { nome: "", preco: 0, retornoDias: 0 };
+  const v2 = (n) => (temCusto(n) && n > 0 ? String(n.toFixed(2)).replace(".", ",") : temCusto(n) ? "0,00" : "");
   abrirFolha(id ? "Editar item" : "Novo item", `<form id="f-cat" class="stack" data-id="${id || ""}">
     <label class="campo">Nome<input id="ct-nome" value="${esc(i.nome)}" required></label>
     <div class="duas"><label class="campo">Preço (R$)<input id="ct-preco" inputmode="decimal" value="${i.preco ? String(i.preco.toFixed(2)).replace(".", ",") : ""}" required></label>
-    <label class="campo">Retorno (dias)<input id="ct-ret" type="number" min="0" value="${i.retornoDias || ""}" placeholder="0 = não tem"></label></div>
-    <div class="sheet-pe">${id ? `<button type="button" class="perigo" data-act="cat-apagar" data-id="${id}">Excluir</button>` : ""}<button type="button" data-act="fechar">Cancelar</button><button class="prim" type="submit">Salvar</button></div></form>`, () => $("#ct-nome").focus());
+    <label class="campo">Custo por unidade (R$)<input id="ct-custo" inputmode="decimal" value="${v2(i.custo)}" placeholder="ingredientes, embalagem…"></label></div>
+    <p class="small muted" id="ct-margem"></p>
+    <label class="campo">Retorno para manutenção (dias)<input id="ct-ret" type="number" min="0" value="${i.retornoDias || ""}" placeholder="0 = não tem"></label>
+    <div class="sheet-pe">${id ? `<button type="button" class="perigo" data-act="cat-apagar" data-id="${id}">Excluir</button>` : ""}<button type="button" data-act="fechar">Cancelar</button><button class="prim" type="submit">Salvar</button></div></form>`, () => {
+    const f = () => { const pr = numBR($("#ct-preco").value), cu = $("#ct-custo").value.trim() ? numBR($("#ct-custo").value) : null;
+      $("#ct-margem").innerHTML = cu === null ? "Sem o custo, o Caderninho não calcula seu lucro." : pr > 0 && pr > cu ? `Margem: <b>${brl(pr - cu)}</b> por unidade (${pct((pr - cu) / pr)} do preço).` : `<span style="color:var(--perigo)">Preço igual ou abaixo do custo.</span>`; };
+    $("#ct-preco").addEventListener("input", f); $("#ct-custo").addEventListener("input", f); f(); $("#ct-nome").focus(); });
 }
 
 /* Confirmação dentro da página (o navegador da prévia bloqueia confirm()) */
@@ -826,7 +1007,7 @@ document.addEventListener("click", (e) => {
     case "fechar": fecharFolha(); break;
     case "wa": { const c = cliente(d.cli); if (c && /cobrar/i.test(el.textContent)) { c.ultimaCobranca = hoje(); salvar(); setTimeout(render, 300); } break; }
     case "nova-venda": folhaVenda(d.cli || (tela === "cliente" ? clienteAberto : null)); break;
-    case "cart-add": { const i = db.catalogo.find((x) => x.id === d.id); const j = carrinho.find((x) => x.catId === i.id); if (j) j.qtd++; else carrinho.push({ catId: i.id, nome: i.nome, qtd: 1, preco: i.preco, retornoDias: i.retornoDias }); desenharCarrinho(); break; }
+    case "cart-add": { const i = db.catalogo.find((x) => x.id === d.id); const j = carrinho.find((x) => x.catId === i.id); if (j) j.qtd++; else carrinho.push({ catId: i.id, nome: i.nome, qtd: 1, preco: i.preco, custo: i.custo, retornoDias: i.retornoDias }); desenharCarrinho(); break; }
     case "cart-avulso": carrinho.push({ nome: "", qtd: 1, preco: 0, editNome: true }); desenharCarrinho(); $(`#vd-carrinho input[data-k="${carrinho.length - 1}"]`)?.focus(); break;
     case "cart-mais": carrinho[+d.k].qtd++; desenharCarrinho(); break;
     case "cart-menos": { const k = +d.k; carrinho[k].qtd--; if (carrinho[k].qtd <= 0) carrinho.splice(k, 1); desenharCarrinho(); break; }
@@ -845,11 +1026,14 @@ document.addEventListener("click", (e) => {
       const a = db.agenda.find((x) => x.id === d.ag); a.status = "feito"; salvar(); render();
       folhaVenda(a.clienteId);
       const cat = db.catalogo.find((i) => i.nome.toLowerCase() === a.servico.toLowerCase());
-      carrinho.push(cat ? { catId: cat.id, nome: cat.nome, qtd: 1, preco: cat.preco, retornoDias: cat.retornoDias } : { nome: a.servico, qtd: 1, preco: 0, editNome: true });
+      carrinho.push(cat ? { catId: cat.id, nome: cat.nome, qtd: 1, preco: cat.preco, custo: cat.custo, retornoDias: cat.retornoDias } : { nome: a.servico, qtd: 1, preco: 0, editNome: true });
       desenharCarrinho(); aviso("Serviço concluído. Anote o valor."); break;
     }
     case "retorno-ok": { const v = db.vendas.find((x) => x.id === d.venda); v.retornoAvisado = true; salvar(); render(); break; }
     case "cat-novo": folhaCatalogo(); break;
+    case "fixo-mais": $("#fixos-lista").insertAdjacentHTML("beforeend", linhaFixo({ nome: "", valor: "" })); $("#fixos-lista .fixo-linha:last-child input").focus(); break;
+    case "fixo-tirar": el.closest(".fixo-linha").remove(); totalFixosForm(); break;
+    case "sim-exemplo": $("#sm-preco").value = "8,00"; $("#sm-custo").value = "2,99"; $("#sm-fixos").value = "1000,00"; atualizarSimulador(); break;
     case "cat-editar": folhaCatalogo(d.id); break;
     case "cat-apagar": db.catalogo = db.catalogo.filter((i) => i.id !== d.id); salvar(); fecharFolha(); render(); break;
     case "modelos-padrao": db.modelos = { ...MODELOS_PADRAO }; salvar(); render(); aviso("Mensagens restauradas"); break;
@@ -869,9 +1053,13 @@ document.addEventListener("submit", (e) => {
   else if (f.id === "f-cli") salvarCliente(f);
   else if (f.id === "f-ag") salvarAgenda(f);
   else if (f.id === "f-cat") {
-    const dados = { nome: $("#ct-nome").value.trim(), preco: numBR($("#ct-preco").value), retornoDias: parseInt($("#ct-ret").value, 10) || 0 };
+    const dados = { nome: $("#ct-nome").value.trim(), preco: numBR($("#ct-preco").value), custo: $("#ct-custo").value.trim() ? numBR($("#ct-custo").value) : undefined, retornoDias: parseInt($("#ct-ret").value, 10) || 0 };
     if (f.dataset.id) Object.assign(db.catalogo.find((i) => i.id === f.dataset.id), dados); else db.catalogo.push({ id: uid(), ...dados });
     salvar(); fecharFolha(); render(); aviso("Item salvo");
+  } else if (f.id === "f-fixos") {
+    db.perfil.fixos = [...document.querySelectorAll("#fixos-lista .fixo-linha")].map((l) => ({ nome: l.querySelector("[data-fx=nome]").value.trim(), valor: numBR(l.querySelector("[data-fx=valor]").value) })).filter((x) => x.nome || x.valor);
+    db.perfil.metaLucro = numBR($("#fx-meta").value);
+    salvar(); render(); aviso("Custos salvos");
   } else if (f.id === "f-perfil") {
     db.perfil.negocio = $("#pf-negocio").value.trim() || "Meu negócio"; db.perfil.pix = $("#pf-pix").value.trim();
     db.perfil.ramo = document.querySelector('input[name="pf-ramo"]:checked').value;
@@ -880,7 +1068,7 @@ document.addEventListener("submit", (e) => {
   } else if (f.id === "f-modelos") {
     Object.keys(MODELOS_PADRAO).forEach((k) => { db.modelos[k] = $(`#md-${k}`).value; }); salvar(); aviso("Mensagens salvas");
   } else if (f.id === "f-imp") {
-    try { const d = JSON.parse($("#imp-txt").value); if (!Array.isArray(d.clientes) || !Array.isArray(d.vendas)) throw new Error(); d.modelos = { ...MODELOS_PADRAO, ...(d.modelos || {}) }; d.pagamentos ||= []; d.agenda ||= []; d.catalogo ||= []; db = d; salvar(); fecharFolha(); tela = "inicio"; render(); aviso("Backup restaurado"); }
+    try { const d = JSON.parse($("#imp-txt").value); if (!Array.isArray(d.clientes) || !Array.isArray(d.vendas)) throw new Error(); d.modelos = { ...MODELOS_PADRAO, ...(d.modelos || {}) }; d.pagamentos ||= []; d.agenda ||= []; d.catalogo ||= []; d.perfil.fixos ||= []; d.perfil.metaLucro ||= 0; db = d; salvar(); fecharFolha(); tela = "inicio"; render(); aviso("Backup restaurado"); }
     catch (er) { aviso("Esse texto não é um backup do Caderninho."); }
   }
 });

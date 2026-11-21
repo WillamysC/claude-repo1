@@ -1,5 +1,7 @@
 # Caderninho no WhatsApp: plano e system design do protótipo
 
+> **Novidade:** o robô também responde **"estou tendo lucro?"**. Com o custo de cada produto e as contas fixas do mês, ele calcula a margem de contribuição e o ponto de equilíbrio (seção 10). O painel ganhou a tela **Lucro** com a mesma conta.
+>
 > **Mudança de rumo em relação ao `app/index.html`.** A entrada principal deixa de ser um app com formulários. Agora é **um número de WhatsApp** com quem a vendedora conversa do jeito que já conversa hoje ("Ana levou 3 dudu de morango, fiado"). O app web vira o **painel**: um link para ver a lista de quem deve quanto.
 
 ---
@@ -19,6 +21,7 @@ Critérios de sucesso, medidos depois de 4 semanas de piloto:
 | Correções ("desfaz", "não, era a outra Ana") | < 10% das mensagens |
 | Tempo da mensagem até a confirmação, p95 | < 5 s em texto, < 10 s em áudio |
 | Cobranças geradas com "cobra a X" | ≥ 1 por semana |
+| Ela informou o custo dos produtos e as contas fixas, e consultou "como tá o mês?" | ≥ 1 vez por semana a partir da semana 2 |
 | Ela continua usando na semana 4 sem ser lembrada | sim |
 
 **Fora do escopo do protótipo:** agenda e serviços (refrigeração), envio automático de mensagens para os clientes dela, conciliação automática de Pix, cobrança da assinatura, vários usuários por negócio.
@@ -151,7 +154,7 @@ Nunca vai para o modelo: saldos, telefones, chave Pix. Ele não precisa disso pa
 
 \* Estimativa: ~3 mil tokens de contexto (a maior parte em cache), ~400 tokens novos e ~250 de saída. Medir de verdade com `usage` no piloto.
 
-**Recomendação:** começar o piloto com **Opus 5.5 em `effort: "low"`** para estabelecer a qualidade de referência, enquanto o conjunto de testes (seção 10) é montado. Depois rodar o mesmo conjunto no **Haiku 5.5**. Se ele acertar tanto quanto, a troca derruba o custo do LLM a centavos por cliente por mês, o que importa para um produto vendido a microempreendedor. A decisão é sua, com os números na mão.
+**Recomendação:** começar o piloto com **Opus 5.5 em `effort: "low"`** para estabelecer a qualidade de referência, enquanto o conjunto de testes (seção 11) é montado. Depois rodar o mesmo conjunto no **Haiku 5.5**. Se ele acertar tanto quanto, a troca derruba o custo do LLM a centavos por cliente por mês, o que importa para um produto vendido a microempreendedor. A decisão é sua, com os números na mão.
 
 Notas técnicas para esses modelos:
 - Use saída estruturada (`output_config.format`) em vez de forçar uma tool: `tool_choice` forçado (`any`/`tool`) é recusado no Opus 5.5.
@@ -202,6 +205,7 @@ create table negocio (
   nome          text not null,
   pix_chave     text, pix_nome text, pix_cidade text,
   fuso          text not null default 'America/Recife',
+  meta_lucro_centavos bigint,                    -- quanto quer lucrar por mês (opcional)
   criado_em     timestamptz not null default now()
 );
 
@@ -223,6 +227,7 @@ create table produto (
   nome           text not null,
   apelidos       text[] not null default '{}',
   preco_centavos bigint not null check (preco_centavos >= 0),
+  custo_centavos bigint check (custo_centavos >= 0), -- custo variável por unidade; null = não informado
   ativo          boolean not null default true
 );
 
@@ -235,7 +240,8 @@ create table lancamento (                        -- só INSERT; nunca UPDATE/DEL
   tipo            tipo_lancamento not null,
   valor_centavos  bigint not null,               -- + aumenta a dívida, − diminui
   pago_na_hora_centavos bigint not null default 0, -- compra: quanto já foi pago no ato
-  itens           jsonb,                         -- [{produto_id, nome, qtd, preco_centavos}]
+  itens           jsonb,                         -- [{produto_id, nome, qtd, preco_centavos, custo_centavos}]
+                                                 -- o custo é copiado do produto no dia da venda: mudar o custo depois não reescreve o passado
   forma           text,                          -- pix | dinheiro | cartao
   ocorreu_em      date not null,
   estorna_id      uuid references lancamento(id),
@@ -248,6 +254,15 @@ create index on lancamento (negocio_id, cliente_id, ocorreu_em);
 create view saldo_cliente as
   select cliente_id, sum(valor_centavos) as saldo_centavos
   from lancamento group by cliente_id;
+
+create table custo_fixo (                       -- contas do mês que não dependem de vender
+  id             uuid primary key default gen_random_uuid(),
+  negocio_id     uuid not null references negocio(id),
+  nome           text not null,                  -- luz do freezer, celular, aluguel, MEI
+  valor_centavos bigint not null check (valor_centavos >= 0),
+  vigente_desde  date not null default current_date,
+  vigente_ate    date                            -- mudou de valor: fecha a linha e abre outra
+);
 
 create table mensagem (
   id             uuid primary key default gen_random_uuid(),
@@ -287,6 +302,10 @@ O mesmo esquema serve para geladinho, marmita, manicure, diarista e cantina. O q
 | "Cobra a Ana" | Gera a mensagem de cobrança (seção 9) |
 | "Desfaz" | Estorna o último lançamento |
 | "Dudu de açaí agora é 3 reais" | Cria ou atualiza produto |
+| "Custo do dudu de morango é 85 centavos" | Grava o custo e responde a margem: "Margem de R$ 1,65 por dudu (66%)" |
+| "Luz do freezer dá uns 90 por mês" | Cria ou atualiza um custo fixo |
+| "Como tá o mês?" / "Quanto falta pra empatar?" | Ponto de equilíbrio, quanto falta (em R$ e em unidades) e resultado até agora (seção 10) |
+| "Se eu vender o dudu a 3 reais?" | Simulação: nova margem e quantas unidades precisa vender |
 | "Painel" / "manda o link" | Envia o link mágico do painel |
 
 Na primeira mensagem de um número desconhecido acontece um onboarding de 3 perguntas: nome do negócio, chave Pix e cidade (a cidade vai no Pix). No piloto, só números de uma lista permitida são atendidos.
@@ -319,16 +338,62 @@ Pix copia e cola (já com o valor):
 
 ---
 
-## 10. Avaliação: como saber se está funcionando antes de dar pra ela
+## 10. Lucro: o ponto de equilíbrio dentro da conversa
+
+Anotar e cobrar respondem "quem me deve". A próxima pergunta de quem vende é **"estou ganhando dinheiro?"**. A conta é a mesma de qualquer aula de precificação, aplicada aos dados que o Caderninho já tem:
+
+| Conceito | Fórmula | Exemplo (lata comprada a R$ 2,99 e vendida a R$ 8, com R$ 1.000 de fixos) |
+|---|---|---|
+| Margem de contribuição | (preço − custo) ÷ preço | (8,00 − 2,99) ÷ 8,00 = **62,6%** |
+| Ponto de equilíbrio (R$) | custos fixos ÷ margem | 1.000 ÷ 0,626 = **R$ 1.596,81** |
+| Unidades para empatar | ponto de equilíbrio ÷ preço | 1.596,81 ÷ 8 ≈ **200 unidades** |
+| Faturamento para a meta de lucro | (fixos + lucro desejado) ÷ margem | com meta de R$ 500: 1.500 ÷ 0,626 = R$ 2.395 |
+| Preço para uma margem desejada | custo ÷ (1 − margem desejada) | custo R$ 2,99 e margem de 60% → R$ 7,48 |
+
+### O que o Caderninho faz diferente de uma planilha
+
+- **Usa as vendas reais.** A planilha pede um preço; o negócio vende vários produtos. A margem usada é a **média ponderada do que foi vendido no mês** (receita menos o custo dos itens vendidos, dividido pela receita), e as unidades para empatar usam o preço médio por unidade vendida.
+- **Atualiza sozinho.** Cada venda anotada move a barra até o ponto de equilíbrio. Ninguém precisa abrir planilha no fim do mês.
+- **Separa lucro de dinheiro no bolso.** Venda no fiado entra no faturamento, mas não no caixa. A resposta mostra as duas coisas: "você já passou do empate, mas R$ 340 desse mês estão no fiado". Fiado que não volta é prejuízo, e isso liga a conta do lucro à cobrança (seção 9).
+- **Custo congelado na venda.** O custo de cada item é copiado para o lançamento. Se o leite ninho subir em dezembro, a margem de novembro continua certa.
+
+### Como o robô responde
+
+Tudo calculado no servidor, com texto montado por modelo fixo (princípio 2: o LLM não escreve números):
+
+```
+📊 Novembro até hoje (dia 21)
+Vendido: R$ 158,50 · margem de 63%
+Contas fixas: R$ 200,00
+Ponto de equilíbrio: R$ 318,91 (≈ 76 dudus no mês)
+
+Faltam R$ 160,41 pra empatar (≈ 38 dudus em 9 dias, uns 5 por dia).
+⚠️ R$ 75,00 das vendas estão no fiado. "cobra a Ana" ajuda a fechar o mês.
+```
+
+### Coleta dos números sem formulário
+
+- Custos e contas fixas **não entram no onboarding**. O registro de vendas funciona sem eles.
+- Depois de 5 vendas, o robô pergunta uma vez: "Quer saber se está tendo lucro? Me diz quanto custa fazer cada dudu (ingredientes + saquinho)". A partir da resposta ("o de morango sai uns 85 centavos"), ele grava o custo.
+- Contas fixas também são frases: "luz do freezer uns 90", "celular 50". Valor mensal aproximado basta.
+- Quando falta custo de algum produto, a resposta avisa e usa a margem média dos outros, deixando claro que é estimativa.
+
+### Limites que a resposta deixa explícitos
+
+- É uma **estimativa de gestão**, não contabilidade. Não substitui o contador nem trata impostos além do que ela colocar como custo fixo (por exemplo, o DAS do MEI).
+- No custo por unidade entra tudo que acompanha cada venda: ingredientes, embalagem, gás, peças e a **taxa da maquininha** quando a venda é no cartão.
+- Com produtos muito diferentes (pacote de 10 contra unidade avulsa), "unidades para empatar" é aproximado. O valor em reais é o número confiável.
+
+## 11. Avaliação: como saber se está funcionando antes de dar pra ela
 
 1. **Conjunto de frases reais.** Com permissão dela, exportar a conversa de anotações que ela já usa e montar de 100 a 200 frases com a interpretação esperada. Somar casos difíceis: duas Anas, erro de digitação, gíria, várias operações numa frase, áudio transcrito com erro.
 2. **Teste automático** que roda o interpretador nessas frases e compara com o esperado: tipo da operação, cliente, quantidades e valores. Roda a cada mudança no prompt ou no modelo.
-3. **Testes unitários do núcleo:** cálculo de saldo, estorno, busca aproximada, geração do Pix (validado contra um leitor de BR Code) e idempotência do webhook.
+3. **Testes unitários do núcleo:** cálculo de saldo, estorno, margem e ponto de equilíbrio (incluindo o exemplo da tabela da seção 10, que precisa dar 62,6%, R$ 1.596,81 e 200 unidades), busca aproximada, geração do Pix (validado contra um leitor de BR Code) e idempotência do webhook.
 4. **Durante o piloto:** revisão semanal de 15 minutos com ela comparando o painel com a realidade. Toda divergência vira um caso novo no conjunto de testes.
 
 ---
 
-## 11. Stack e infraestrutura
+## 12. Stack e infraestrutura
 
 | Peça | Escolha para o protótipo | Por quê |
 |---|---|---|
@@ -352,15 +417,15 @@ Pix copia e cola (já com o valor):
 
 ---
 
-## 12. Painel web
+## 13. Painel web
 
 - O robô manda um **link mágico** (`/p/<token>`): um token assinado com HMAC que contém `negocio_id` e validade de 7 dias. Não tem senha.
-- O protótipo do painel é **somente leitura**: total na rua, quem deve quanto e há quanto tempo, extrato por cliente e um botão "Cobrar" que gera a mesma mensagem da seção 9.
+- O protótipo do painel é **somente leitura**: total na rua, quem deve quanto e há quanto tempo, extrato por cliente, um botão "Cobrar" que gera a mesma mensagem da seção 9 e a tela **Lucro** (seção 10), com a barra até o ponto de equilíbrio, a margem de cada produto e o simulador de preço.
 - Correções continuam pelo WhatsApp ("desfaz") no protótipo. Edição pelo painel fica para depois (com `origem = 'painel'` no lançamento).
 
 ---
 
-## 13. Segurança e LGPD
+## 14. Segurança e LGPD
 
 - **Papéis:** a vendedora é a controladora dos dados dos clientes dela; o Caderninho é o operador. Termo de uso simples aceito no onboarding.
 - **Mínimo de dados:** nome e, opcionalmente, telefone dos clientes. Nada de CPF.
@@ -372,17 +437,18 @@ Pix copia e cola (já com o valor):
 
 ---
 
-## 14. Plano de execução
+## 15. Plano de execução
 
 | Fase | Duração | Entregas | Pronto quando |
 |---|---|---|---|
 | **0. Fundação** | 3 a 4 dias | App na Meta com número de teste; webhook com validação de assinatura que responde "eco"; Postgres com o esquema; deploy | Ela manda "oi" e recebe resposta |
 | **1. Registrar e consultar (texto)** | 1,5 semana | Interpretador com saída estruturada; busca aproximada; compra, pagamento, saldo, devedores e desfaz; perguntas de desambiguação; confirmações; conjunto de testes com ≥ 100 frases | ≥ 95% de acerto no conjunto de testes e nenhum registro sem confirmação |
 | **2. Áudio, cobrança e painel** | 1 semana | Transcrição; "cobra a X" com Pix copia-e-cola; link mágico; painel somente leitura | Pix gerado é lido pelo app do banco com o valor certo |
+| **2b. Lucro** | 3 a 4 dias | Custo por produto e contas fixas por mensagem; "como tá o mês?"; simulação de preço; tela Lucro no painel | O exemplo da seção 10 bate centavo por centavo nos testes |
 | **3. Piloto** | 4 semanas | Uso real pela amiga; revisão semanal; correções | Métricas da seção 1 |
 | **4. Decisão** | — | Relato do piloto (números + falas dela) | Continuar, ajustar ou parar |
 
-Total até o início do piloto: **cerca de 3 semanas** de uma pessoa desenvolvendo em meio período.
+Total até o início do piloto: **cerca de 3,5 semanas** de uma pessoa desenvolvendo em meio período.
 
 ### Custo mensal estimado durante o piloto (1 usuária)
 
@@ -396,7 +462,7 @@ Total até o início do piloto: **cerca de 3 semanas** de uma pessoa desenvolven
 
 ---
 
-## 15. Riscos e respostas
+## 16. Riscos e respostas
 
 | Risco | Resposta |
 |---|---|
@@ -409,10 +475,10 @@ Total até o início do piloto: **cerca de 3 semanas** de uma pessoa desenvolven
 
 ---
 
-## 16. Depois do piloto (se der certo)
+## 17. Depois do piloto (se der certo)
 
 1. Segundo e terceiro negócios com o mesmo esquema (marmita, manicure), sem mudar código.
-2. Resumo semanal opcional ("3 clientes passaram de 15 dias") via template utilitário.
+2. Resumo semanal opcional ("3 clientes passaram de 15 dias", "faltam R$ 160 pra empatar o mês") via template utilitário.
 3. Pix com confirmação automática via API de banco.
 4. Servidor **MCP** expondo `registrar_compra`, `registrar_pagamento`, `consultar_saldo` e `cobrar` para quem usa Claude ou outro assistente. É bônus, não porta de entrada.
 5. Vertical de serviços (refrigeração): agenda e lembretes de manutenção, reaproveitando o que já existe no `app/index.html`.
